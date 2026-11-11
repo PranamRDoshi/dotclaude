@@ -15,7 +15,7 @@ names and tool names that used to be hard-coded are options with neutral default
 | [`mods/inflight`](mods/inflight) | Ready | MCP server status and a worktree list with PR and CI state |
 | `mods/guardrails` | Planned | Hard-blocks tool calls that break your written rules |
 | [`skills-bundle`](skills-bundle) | Ready | `write-spec`, `ensure-repo-sync`, `address-pr-review`, `worktree`, installed as the `harness-skills` plugin |
-| `templates/` | Planned | `CLAUDE.md`, rule files and a settings example |
+| [`templates/`](templates) | Ready | `CLAUDE.md`, rule files and a settings example, copied by hand |
 
 The order and the reasoning are in [plans/plan_PublicHarnessRepo.md](plans/plan_PublicHarnessRepo.md).
 
