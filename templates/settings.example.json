@@ -1,0 +1,55 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(git remote -v)",
+      "Bash(ps *)",
+      "Bash(df *)",
+      "Bash(tree *)",
+      "Bash(uname *)",
+      "Bash(whoami)",
+      "Bash(hostname)",
+      "Bash(date)",
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(python3 --version)",
+      "Bash(docker ps *)",
+      "Bash(docker images *)",
+      "Bash(docker logs *)",
+      "Bash(wc -l)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path'); case \"$f\" in *.py) ruff check \"$f\" ;; *.go) go vet ./... ;; esac"
+          }
+        ]
+      }
+    ]
+  },
+  "extraKnownMarketplaces": {
+    "dotclaude": {
+      "source": {
+        "source": "github",
+        "repo": "PranamRDoshi/dotclaude"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "cache-clock@dotclaude": true,
+    "timeline@dotclaude": true,
+    "inflight@dotclaude": true,
+    "guardrails@dotclaude": true,
+    "harness-skills@dotclaude": true
+  }
+}

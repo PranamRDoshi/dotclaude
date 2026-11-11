@@ -1,0 +1,9 @@
+{
+  "name": "harness-skills",
+  "version": "1.0.0",
+  "description": "Skills for writing specs, checking repo sync, working through PR review comments, and keeping changes in git worktrees.",
+  "author": {
+    "name": "Pranam Doshi"
+  },
+  "license": "MIT"
+}
