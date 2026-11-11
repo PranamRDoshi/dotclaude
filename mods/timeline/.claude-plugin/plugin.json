@@ -1,0 +1,32 @@
+{
+  "name": "timeline",
+  "version": "1.0.0",
+  "description": "A side pane of session milestones. One small Haiku call per turn adds a row only when the turn had a real outcome, and may suggest one memory to save.",
+  "author": {
+    "name": "Pranam Doshi"
+  },
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "autoOpen": {
+      "type": "string",
+      "title": "Open the pane at session start",
+      "description": "on opens the timeline pane once per session when the window is at least 144 columns wide. off waits for /timeline.",
+      "default": "on",
+      "options": [
+        "on",
+        "off"
+      ]
+    },
+    "suggestMemories": {
+      "type": "string",
+      "title": "Suggest memories",
+      "description": "on lets the per-turn call suggest one memory in a Save/Skip band, and sends it your memory index so it does not repeat one. off never reads or sends the index.",
+      "default": "on",
+      "options": [
+        "on",
+        "off"
+      ]
+    }
+  }
+}

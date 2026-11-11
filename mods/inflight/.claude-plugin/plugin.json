@@ -1,0 +1,37 @@
+{
+  "name": "inflight",
+  "version": "1.0.0",
+  "description": "MCP server status and a git worktree list inside the timeline pane: connected, down and sign-in-waiting MCP servers above the milestones; below them each worktree's git state, linked PR, CI and an optional review check, a keep or remove verdict, and a Remove button on a remove verdict.",
+  "license": "MIT",
+  "types": "./hooks/types.d.ts",
+  "author": {
+    "name": "Pranam Doshi"
+  },
+  "dependencies": ["timeline"],
+  "userConfig": {
+    "worktreesRoot": {
+      "type": "string",
+      "title": "Worktrees folder",
+      "description": "A folder whose child folders are worktrees; a leading ~ is your home folder. Empty lists the linked worktrees of the repo the session runs in.",
+      "default": ""
+    },
+    "removeCommand": {
+      "type": "string",
+      "title": "Remove command",
+      "description": "What the Remove button runs, split on spaces and run without a shell from the worktree's main repo. {path} and {name} are filled in; a leading ~ on the program is your home folder.",
+      "default": "git worktree remove {path}"
+    },
+    "skipRepos": {
+      "type": "string",
+      "title": "Repos to skip",
+      "description": "Comma-separated repo names whose worktrees are listed by name only, with no further git or gh calls.",
+      "default": ""
+    },
+    "reviewCheck": {
+      "type": "string",
+      "title": "Review check",
+      "description": "Exact name of one status check, such as a review bot's, to show on its own line apart from CI. Empty counts every check toward CI.",
+      "default": ""
+    }
+  }
+}

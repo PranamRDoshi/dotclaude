@@ -1,0 +1,24 @@
+{
+  "name": "dotclaude",
+  "description": "A reproducible Claude Code setup: mods that change the interface, with skills and instruction-file templates to follow.",
+  "owner": {
+    "name": "Pranam Doshi"
+  },
+  "plugins": [
+    {
+      "name": "cache-clock",
+      "source": "./mods/cache-clock",
+      "description": "Status line with context, cost, prompt cache countdown and usage windows, plus a Keep warm button."
+    },
+    {
+      "name": "timeline",
+      "source": "./mods/timeline",
+      "description": "Side pane of session milestones, written by one small Haiku call per turn."
+    },
+    {
+      "name": "inflight",
+      "source": "./mods/inflight",
+      "description": "MCP server status and a worktree list with PR and CI state, drawn in the timeline pane."
+    }
+  ]
+}
