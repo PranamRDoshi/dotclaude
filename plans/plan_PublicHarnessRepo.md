@@ -1,6 +1,6 @@
 # Plan: a public, reproducible Claude Code harness
 
-Status: in progress. Phase 1 is this PR.
+Status: phases 1 to 5 are in the repo. Phase 6 is not started.
 
 ## Goal
 
