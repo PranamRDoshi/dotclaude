@@ -14,19 +14,20 @@ names and tool names that used to be hard-coded are options with neutral default
 | [`mods/timeline`](mods/timeline) | Ready | Side pane of session milestones, written by one small model call per turn |
 | [`mods/inflight`](mods/inflight) | Ready | MCP server status and a worktree list with PR and CI state |
 | `mods/guardrails` | Planned | Hard-blocks tool calls that break your written rules |
-| `skills-bundle` | Planned | `write-spec`, `ensure-repo-sync`, `address-pr-review`, `worktree` |
+| [`skills-bundle`](skills-bundle) | Ready | `write-spec`, `ensure-repo-sync`, `address-pr-review`, `worktree`, installed as the `harness-skills` plugin |
 | `templates/` | Planned | `CLAUDE.md`, rule files and a settings example |
 
 The order and the reasoning are in [plans/plan_PublicHarnessRepo.md](plans/plan_PublicHarnessRepo.md).
 
 ## Install
 
-Type one line per mod at the Claude Code prompt:
+Type one line per plugin at the Claude Code prompt:
 
 ```
 /plugin install cache-clock --marketplace PranamRDoshi/dotclaude
 /plugin install timeline --marketplace PranamRDoshi/dotclaude
 /plugin install inflight --marketplace PranamRDoshi/dotclaude
+/plugin install harness-skills --marketplace PranamRDoshi/dotclaude
 ```
 
 The first one asks `Add marketplace?`. Answer `y`, pick a scope, and set the options it offers.

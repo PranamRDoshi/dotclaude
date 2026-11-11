@@ -19,6 +19,11 @@
       "name": "inflight",
       "source": "./mods/inflight",
       "description": "MCP server status and a worktree list with PR and CI state, drawn in the timeline pane."
+    },
+    {
+      "name": "harness-skills",
+      "source": "./skills-bundle",
+      "description": "Skills for writing specs, checking repo sync, working through PR review comments, and keeping changes in git worktrees."
     }
   ]
 }
