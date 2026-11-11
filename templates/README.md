@@ -1,7 +1,11 @@
 # Templates
 
-Instruction files, rule files and a settings example. Plugins cannot install these, so you copy
-them by hand and fill in the placeholders. Anything in `<angle brackets>` is yours to replace.
+Instruction files, rule files and a settings example. Plugins cannot install these, so they are
+copied into place and you fill in the placeholders. Anything in `<angle brackets>` is yours to
+replace.
+
+The repo's `install.sh` copies every file in the table below except the settings example, and only
+where no file exists yet. The rest of this page is for copying by hand.
 
 ## What goes where
 
