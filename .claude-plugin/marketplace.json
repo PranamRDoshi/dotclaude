@@ -21,6 +21,11 @@
       "description": "MCP server status and a worktree list with PR and CI state, drawn in the timeline pane."
     },
     {
+      "name": "guardrails",
+      "source": "./mods/guardrails",
+      "description": "Hard-blocks tool calls that break your written rules: protected branches, .env files, read-only and consent-gated repos."
+    },
+    {
       "name": "harness-skills",
       "source": "./skills-bundle",
       "description": "Skills for writing specs, checking repo sync, working through PR review comments, and keeping changes in git worktrees."

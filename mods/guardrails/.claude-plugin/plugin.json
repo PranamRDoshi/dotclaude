@@ -1,0 +1,79 @@
+{
+  "name": "guardrails",
+  "version": "1.0.0",
+  "description": "Turns your written repo rules into hard tool-call denials: protected branches, .env files, read-only and consent-gated repos, branch locks, blocked commands and commits outside worktrees, with session-scoped consent typed at the prompt.",
+  "license": "MIT",
+  "author": { "name": "Pranam Doshi" },
+  "hooks": "./hooks/hooks.json",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "workspaceRoot": {
+      "type": "string",
+      "title": "Workspace root",
+      "description": "The folder that holds your repos; a leading ~ is your home folder. Empty turns off every rule that needs it: read-only and consent-gated repos, branch locks, primary-checkout commits and recursive-search limits.",
+      "default": ""
+    },
+    "worktreesDir": {
+      "type": "string",
+      "title": "Worktrees folder",
+      "description": "Name of the folder directly under the workspace root that holds your git worktrees. Commits there are allowed.",
+      "default": "worktrees"
+    },
+    "protectedBranches": {
+      "type": "string",
+      "title": "Protected branches",
+      "description": "Comma-separated branch names. No direct push to them, no gh pr merge into them, no local commit, merge, rebase or reset while one is checked out, and no local delete or rename.",
+      "default": "main,master,develop"
+    },
+    "primaryCommits": {
+      "type": "string",
+      "title": "Commits in primary checkouts",
+      "description": "block: commits in a repo under the workspace root but outside the worktrees folder need /consent primary-commit. allow: no check. Needs a workspace root.",
+      "default": "block",
+      "options": ["block", "allow"]
+    },
+    "readOnlyRepos": {
+      "type": "string",
+      "title": "Read-only repos",
+      "description": "Comma-separated folder names directly under the workspace root that are never written. No consent unlocks them.",
+      "default": ""
+    },
+    "consentRepos": {
+      "type": "string",
+      "title": "Consent-gated repos",
+      "description": "Comma-separated folder names directly under the workspace root. Reading one needs /consent <folder>; committing or pushing in it needs /consent <folder>-write.",
+      "default": ""
+    },
+    "branchLocks": {
+      "type": "string",
+      "title": "Branch locks",
+      "description": "Comma-separated folder=branch pairs. That repo may not create or switch to any other branch.",
+      "default": ""
+    },
+    "blockedCommands": {
+      "type": "string",
+      "title": "Blocked commands",
+      "description": "Comma-separated program names that are never run, however they are wrapped (sudo, env, sh -c, xargs and so on).",
+      "default": ""
+    },
+    "envFiles": {
+      "type": "string",
+      "title": ".env files",
+      "description": "block: .env, .env.* and *.env files are never read, written or named; .env.example, .env.sample and .env.template pass. allow: no check.",
+      "default": "block",
+      "options": ["block", "allow"]
+    },
+    "protectedPaths": {
+      "type": "string",
+      "title": "Protected paths",
+      "description": "Comma-separated files or folders (~ allowed) that need /consent self-edit to change, on top of this plugin's folder, installed plugins and enabledPlugins in settings.json.",
+      "default": ""
+    },
+    "ownerName": {
+      "type": "string",
+      "title": "Owner name",
+      "description": "Who deny messages tell Claude to ask, as in \"Ask <name> to run /consent ...\".",
+      "default": "the user"
+    }
+  }
+}
