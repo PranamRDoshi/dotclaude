@@ -1,6 +1,6 @@
 {
   "name": "inflight",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server status and a git worktree list inside the timeline pane: connected, down and sign-in-waiting MCP servers above the milestones; below them each worktree's git state, linked PR, CI and an optional review check, a keep or remove verdict, and a Remove button on a remove verdict.",
   "license": "MIT",
   "types": "./hooks/types.d.ts",

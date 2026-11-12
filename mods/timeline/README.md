@@ -62,6 +62,9 @@ Needs Claude Code 2.1.287 or later.
 - `/timeline` opens the pane.
 - With `autoOpen` on, the pane opens by itself once per session when the terminal is at least
   144 columns wide. Close it and it stays closed for that session.
+- The pane sits beside the transcript only in Claude Code's fullscreen layout, which is
+  `"tui": "fullscreen"` in `~/.claude/settings.json`. On the main screen, and inside tmux by
+  default, it sits above the prompt.
 
 ## Options
 

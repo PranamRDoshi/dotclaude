@@ -193,11 +193,14 @@ test('default discovery: linked worktrees of the session repo from git worktree 
   expect(scan.rows[1]).toMatchObject({ repo: 'api', slug: 'open-stacked', mainRepo: `${SRC}/api`, reason: 'ci pending', pr: { ci: 'pending', review: 'none' } })
   let ui = await mount($)
   expect(await ui.find({ text: /review/ })).toBeUndefined()
+  expect(await ui.find({ text: /· gh ok$/ })).toBeDefined()
   await ui.unmount()
   w.cwd = '/plain'
   expect((await runInflight($, w)).rows).toEqual([])
   ui = await mount($)
   expect(await ui.find({ type: 'Text', text: '/plain is not in a git repository.' })).toBeDefined()
+  // No rows means gh was never called, so the header must not vouch for it.
+  expect(await ui.find({ text: /· gh not checked$/ })).toBeDefined()
   await ui.unmount()
 })
 
@@ -239,6 +242,7 @@ test('gh failure: banner text, unknown verdicts, local facts kept', { options: O
   expect(byName['web--dirty-work']?.verdict).toBe('keep')
   const ui = await mount($, 140)
   expect(await ui.find({ text: /gh: HTTP 401: Bad credentials/ })).toBeDefined()
+  expect(await ui.find({ text: /· gh failed$/ })).toBeDefined()
 })
 
 test('a full page falls back to one per-branch call for branches not on it', { options: OPTS }, async ($, on) => {

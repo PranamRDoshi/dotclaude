@@ -36,9 +36,11 @@ and to point `guardrails` at it:
 curl -fsSL https://raw.githubusercontent.com/PranamRDoshi/dotclaude/main/install.sh | bash -s -- ~/code
 ```
 
-[`install.sh`](install.sh) is under 100 lines, so read it first. It is safe to run twice. It
+[`install.sh`](install.sh) is short enough to read first. It is safe to run twice. It
 never overwrites a file you already have, and it leaves permissions and hooks alone: merge those by
-hand from [`templates/settings.example.json`](templates/settings.example.json).
+hand from [`templates/settings.example.json`](templates/settings.example.json). The one setting it
+adds is `"tui": "fullscreen"`, and only when you have not picked a layout. Without it the `timeline`
+pane sits above the prompt and not beside the transcript.
 
 - `CLAUDE_CONFIG_DIR=~/.claude-trial` in front of `bash` installs into that folder and leaves
   `~/.claude` untouched. Start Claude Code with the same variable to use it.
