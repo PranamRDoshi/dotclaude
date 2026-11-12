@@ -135,11 +135,15 @@ function header(el: El, scan: Scan, onRefresh: () => unknown) {
   const removable = scan.rows.filter(row => row.verdict === 'remove').length
   const time = scan.scannedAt ? new Date(scan.scannedAt).toTimeString().slice(0, 5) : 'never'
   const when = scan.status === 'scanning' ? 'scanning...' : scan.status === 'error' ? 'scan failed' : time
+  // gh is only asked about rows with a branch git could read. With none, no call ran, so "ok" would be a guess:
+  // a machine without gh installed used to read "gh ok" until its first worktree.
+  const asked = scan.rows.some(row => row.branch && !row.skipped && !row.error)
+  const gh = scan.ghError ? 'failed' : asked ? 'ok' : 'not checked'
   return (
     <Box flexDirection="row" gap={2}>
       <Text bold>inflight</Text>
       <Box flexGrow={1}>
-        <Text dimColor wrap="wrap">{`${scan.rows.length} wt · ${removable} to remove · ${when} · gh ${scan.ghError ? 'failed' : 'ok'}`}</Text>
+        <Text dimColor wrap="wrap">{`${scan.rows.length} wt · ${removable} to remove · ${when} · gh ${gh}`}</Text>
       </Box>
       <Button key="refresh" label="Refresh" hotkey="r" onPress={onRefresh} />
     </Box>

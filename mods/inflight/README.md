@@ -36,7 +36,9 @@ The worktree list groups rows by repo and numbers them 1 to N. Each row shows:
 - `verdict`: shown when it is `remove`, with the Remove button beside it.
 - `gh`: gh's error, when gh failed and the verdict is `unknown`.
 
-The header shows the scan time, whether gh answered, and a Refresh button on the `r` key.
+The header shows the scan time, whether gh answered, and a Refresh button on the `r` key. gh reads
+`ok`, `failed`, or `not checked` when no worktree needed a PR lookup, so an empty list says nothing
+about whether gh is installed.
 
 ## Options
 
