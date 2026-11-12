@@ -15,11 +15,39 @@ names and tool names that used to be hard-coded are options with neutral default
 | [`mods/inflight`](mods/inflight) | Ready | MCP server status and a worktree list with PR and CI state |
 | [`mods/guardrails`](mods/guardrails) | Ready | Hard-blocks tool calls that break your written rules |
 | [`skills-bundle`](skills-bundle) | Ready | `write-spec`, `ensure-repo-sync`, `address-pr-review`, `worktree`, installed as the `harness-skills` plugin |
-| [`templates/`](templates) | Ready | `CLAUDE.md`, rule files and a settings example, copied by hand |
+| [`templates/`](templates) | Ready | `CLAUDE.md`, rule files and a settings example |
+| [`install.sh`](install.sh) | Ready | Installs all of the above on a fresh machine |
 
 The order and the reasoning are in [plans/plan_PublicHarnessRepo.md](plans/plan_PublicHarnessRepo.md).
 
-## Install
+## Install everything
+
+One command installs the five plugins and copies the global `CLAUDE.md` template. It needs `git`
+and Claude Code 2.1.287 or later.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/PranamRDoshi/dotclaude/main/install.sh | bash
+```
+
+Pass the folder that holds your repos to also get the workspace `CLAUDE.md` and rule files there,
+and to point `guardrails` at it:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/PranamRDoshi/dotclaude/main/install.sh | bash -s -- ~/code
+```
+
+[`install.sh`](install.sh) is under 100 lines, so read it first. It is safe to run twice. It
+never overwrites a file you already have, and it leaves permissions and hooks alone: merge those by
+hand from [`templates/settings.example.json`](templates/settings.example.json).
+
+- `CLAUDE_CONFIG_DIR=~/.claude-trial` in front of `bash` installs into that folder and leaves
+  `~/.claude` untouched. Start Claude Code with the same variable to use it.
+- `DOTCLAUDE_PLUGINS="cache-clock timeline"` installs only the plugins you name.
+
+`guardrails` blocks pushes and commits on `main`, `master` and `develop` and reads of `.env` files
+as soon as it is installed. Read its README first, or leave it out with `DOTCLAUDE_PLUGINS`.
+
+## Install one plugin
 
 Type one line per plugin at the Claude Code prompt:
 

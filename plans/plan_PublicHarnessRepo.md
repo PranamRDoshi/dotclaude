@@ -1,6 +1,6 @@
 # Plan: a public, reproducible Claude Code harness
 
-Status: phases 1 to 5 are in the repo. Phase 6 is not started.
+Status: all six phases are in the repo.
 
 ## Goal
 
@@ -12,7 +12,7 @@ either left out or turned into a setting with a neutral default.
 
 - **Plugin marketplaces.** A repo with `.claude-plugin/marketplace.json` is a marketplace. Each
   mod and the skills bundle is a plugin in it, installed with
-  `/plugin install <name> --marketplace PranamRDoshi/dotclaude`. No installer script is needed.
+  `/plugin install <name> --marketplace PranamRDoshi/dotclaude`. `install.sh` only chains those installs.
 - **`userConfig`.** A plugin declares its options in `plugin.json`, and Claude Code asks for them
   at install time and shows them in its config menu. Anything that used to be a hard-coded path
   or name becomes one of these.
@@ -76,10 +76,14 @@ list, so the defaults cover the common cases (no pushes to protected branches, n
 `.env` files, no commits in a primary checkout) and a team adds its own. The README covers
 setup for the terminal CLI and the desktop app.
 
-### 6. Dogfood
+### 6. Fresh-machine install
 
-The author's own machine installs from this repo, with local values in settings. From then on
-there is one copy of the code.
+`install.sh` installs the five plugins and copies the templates in one command, so the claim
+"reproducible on a fresh machine" can be tested. The test is a Linux host that has never had this
+setup. Plugins still install one by one without the script.
+
+Still open after this phase: the author's own machine switching from its local copy of the mods
+to this repo, so there is one copy of the code.
 
 ## Checks before every push
 
