@@ -1,4 +1,5 @@
 {
+  "tui": "fullscreen",
   "permissions": {
     "allow": [
       "Read",

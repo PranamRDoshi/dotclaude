@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Installs the whole dotclaude setup on one machine: the five plugins from this repo's
 # marketplace, plus the instruction-file templates wherever no file exists yet.
-# Safe to run twice. It never overwrites a file and never edits permissions or hooks.
+# Safe to run twice. It never overwrites a file and never edits permissions or hooks. The one
+# setting it adds is the fullscreen layout, and only when no layout is set.
 #
 # Usage: install.sh [workspace-root]
 #   workspace-root   the folder that holds your repos, such as ~/code. When given, the workspace
@@ -44,6 +45,30 @@ copyIfAbsent() {
   fi
 }
 
+# Sets "tui": "fullscreen" in settings.json when no layout is chosen yet. Panes dock beside the
+# transcript only in that layout; on the main screen the timeline sits above the prompt instead.
+setFullscreenLayout() {
+  local settings="$CONFIG_DIR/settings.json"
+  # Python, not sed or jq: it is the one JSON editor both macOS and Ubuntu ship.
+  command -v python3 >/dev/null && python3 - "$settings" <<'PY' && return
+import json
+import sys
+
+path = sys.argv[1]
+with open(path) as handle:
+    data = json.load(handle)
+if "tui" in data:
+    print("  kept   layout (%s)" % data["tui"])
+else:
+    data["tui"] = "fullscreen"
+    with open(path, "w") as handle:
+        json.dump(data, handle, indent=2)
+        handle.write("\n")
+    print("  set    layout to fullscreen")
+PY
+  echo "  skipped layout. Add \"tui\": \"fullscreen\" to $settings by hand."
+}
+
 command -v git >/dev/null || die "git is not installed"
 command -v claude >/dev/null || die "claude is not installed. See https://claude.com/claude-code"
 # `claude --version` prints "2.1.322 (Claude Code)"; the first word is the version.
@@ -78,6 +103,9 @@ if [ -n "$WORKSPACE" ]; then
     copyIfAbsent "$rule" "$WORKSPACE/.claude/rules/$(basename "$rule")"
   done
 fi
+
+echo "Choosing the layout"
+setFullscreenLayout
 
 cat <<EOF
 
