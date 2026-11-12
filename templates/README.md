@@ -15,7 +15,7 @@ where no file exists yet. The rest of this page is for copying by hand.
 | `workspace/CLAUDE.md` | `<workspace root>/CLAUDE.md` | Rules for the folder that holds your repos: which repos are in scope, worktree-first, PR format |
 | `workspace/rules/worktrees.md` | `<workspace root>/.claude/rules/worktrees.md` | The worktree policy in full |
 | `workspace/rules/authoring-memory-files.md` | `<workspace root>/.claude/rules/authoring-memory-files.md` | How to write and link `CLAUDE.md` and `AGENTS.md` files |
-| `settings.example.json` | merge into `~/.claude/settings.json` | A read-only permission allow-list, a lint-on-edit hook, and this repo's plugins switched on |
+| `settings.example.json` | merge into `~/.claude/settings.json` | The fullscreen layout, a read-only permission allow-list, a lint-on-edit hook, and this repo's plugins switched on |
 
 "Workspace root" is the one folder that holds all your repos, such as `~/code`. The worktree
 skill and the guardrails mod both take it as a setting.
