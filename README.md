@@ -45,6 +45,20 @@ pane sits above the prompt and not beside the transcript.
 - `CLAUDE_CONFIG_DIR=~/.claude-trial` in front of `bash` installs into that folder and leaves
   `~/.claude` untouched. Start Claude Code with the same variable to use it.
 - `DOTCLAUDE_PLUGINS="cache-clock timeline"` installs only the plugins you name.
+- `DOTCLAUDE_REF=<ref>` installs the plugins and templates from that branch, tag or full
+  40-character commit SHA instead of `main`. A commit SHA needs Claude Code 2.1.324 or later, and
+  a short SHA fails. A branch moves when the marketplace updates. A tag or SHA stays put.
+
+To pin everything to one commit, fetch `install.sh` from that commit and pass the same SHA:
+
+```bash
+sha=<full commit SHA>
+curl -fsSL "https://raw.githubusercontent.com/PranamRDoshi/dotclaude/$sha/install.sh" | DOTCLAUDE_REF="$sha" bash
+```
+
+Claude Code keeps one source per marketplace. A rerun at a different ref stops with an error and
+changes nothing. Rerun at the ref you installed, or run `claude plugin marketplace remove dotclaude`
+first. That removal uninstalls the plugins and deletes their options.
 
 `guardrails` blocks pushes and commits on `main`, `master` and `develop` and reads of `.env` files
 as soon as it is installed. Read its README first, or leave it out with `DOTCLAUDE_PLUGINS`.
