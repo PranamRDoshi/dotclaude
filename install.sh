@@ -10,10 +10,15 @@
 # Environment:
 #   CLAUDE_CONFIG_DIR   install into this folder instead of ~/.claude (Claude Code reads it too)
 #   DOTCLAUDE_PLUGINS   space-separated plugin names, to install fewer than all five
+#   DOTCLAUDE_REF       install from this branch, tag or full 40-character commit SHA, not from
+#                       main. A commit SHA needs Claude Code 2.1.324 or later.
 set -euo pipefail
 
 # The https URL, not owner/repo: the short form clones over ssh, which fails without a GitHub key.
 SOURCE="https://github.com/PranamRDoshi/dotclaude.git"
+# "#ref" pins the marketplace clone, so every plugin and template comes from that one ref. A branch
+# moves when the marketplace updates. A tag or SHA stays put. Claude Code fails on a short SHA.
+if [ -n "${DOTCLAUDE_REF:-}" ]; then SOURCE="$SOURCE#$DOTCLAUDE_REF"; fi
 MIN_VERSION="2.1.287"
 CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 # timeline comes before inflight, which draws inside the timeline pane.
@@ -82,13 +87,18 @@ if [ -n "$WORKSPACE" ]; then
 fi
 
 echo "Installing plugins into $CONFIG_DIR"
+# Claude Code keeps one source per marketplace, so a rerun at another ref fails in this loop.
+# Removing the marketplace is left to the user, because it also deletes the plugins' options.
 for plugin in $PLUGINS; do
   # guardrails only enforces its repo rules once it knows where the repos live.
   if [ "$plugin" = guardrails ] && [ -n "$WORKSPACE" ]; then
     claude plugin install "$plugin" --marketplace "$SOURCE" --scope user --config "workspaceRoot=$WORKSPACE"
   else
     claude plugin install "$plugin" --marketplace "$SOURCE" --scope user
-  fi
+  fi || die "installing $plugin failed. If the error says the source does not match, dotclaude is" \
+    "already added at another ref, which 'claude plugin marketplace list' shows. Rerun with that" \
+    "ref, or first run 'claude plugin marketplace remove dotclaude'. That uninstalls its plugins" \
+    "and deletes their options."
 done
 
 # The marketplace is a full clone of this repo, so the templates are already on disk.
