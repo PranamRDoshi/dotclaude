@@ -270,7 +270,9 @@ export const register: Register = (on, options) => {
   // Wraps the timeline pane: the MCP block, whatever the chain draws, then the worktrees. Timeline draws its
   // milestones above next(e), so the worktrees land at the bottom whichever mod's hook runs first; the MCP block
   // tops the pane only while this hook runs outside timeline's.
-  on('ui.render', { component: 'Pane', requestId: TIMELINE_PANE }, async ($, e, next) => {
+  // plugin '*': the engine defaults this key to the hook's own plugin (seen on 2.1.326) and the pane is timeline's,
+  // so without it the hook never runs. Not 'timeline': the test kit leaves e.plugin unset, so that never matches there.
+  on('ui.render', { component: 'Pane', requestId: TIMELINE_PANE, plugin: '*' }, async ($, e, next) => {
     const el = $.ui.resolve(e)
     const above = await next(e)
     const refresh = () => Promise.all([runScan($), checkMcp($)])
