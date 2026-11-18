@@ -9,10 +9,10 @@ import type { EngineInterface, Register, Timer } from 'claude-code'
 import { classify, configuredServers } from './mcp'
 import { mcpTree, paneTree } from './render'
 import {
-  GH_TIMEOUT_MS, PR_FIELDS, PR_PAGE, assemble, baseRow, expandHome, linkedWorktrees, pickPr, removeArgv, rescanPattern,
+  CHECK_FIELDS, GH_TIMEOUT_MS, PR_FIELDS, PR_PAGE, assemble, baseRow, expandHome, linkedWorktrees, pickPr, removeArgv, rescanPattern,
   toPr, withRepo,
 } from './scan'
-import type { Bare, GhPr, RepoPrs } from './scan'
+import type { Bare, GhPr, RepoPrs, RollupEntry } from './scan'
 import type { McpStatus, Pr, Row, Scan } from './types'
 
 type Dollar = EngineInterface
@@ -107,16 +107,26 @@ async function readRow($: Dollar, path: string): Promise<Bare> {
   return { ...named, ...(await readGit($, path)) }
 }
 
-/** Runs one `gh pr list` in a worktree; the PRs, or the first stderr line when gh fails. */
-async function ghPrList($: Dollar, cwd: string, extra: string[]): Promise<{ prs: GhPr[] } | { error: string }> {
+/** Runs one gh command in a worktree; its parsed JSON, or the first stderr line when gh fails. */
+async function ghJson<T>($: Dollar, cwd: string, argv: string[]): Promise<{ value: T } | { error: string }> {
   try {
-    const argv = ['gh', 'pr', 'list', '--state', 'all', ...extra, '--json', PR_FIELDS]
     const ran = await $.process.run(argv, { cwd, timeoutMs: GH_TIMEOUT_MS })
     if (ran.exitCode !== 0) return { error: ran.stderr.split('\n').find(line => line.trim()) ?? `gh exited ${ran.exitCode}` }
-    return { prs: JSON.parse(ran.stdout) as GhPr[] }
+    return { value: JSON.parse(ran.stdout) as T }
   } catch (err) {
     return { error: err instanceof Error ? err.message : String(err) }
   }
+}
+
+/** Runs one `gh pr list` in a worktree, without checks; the PRs, or gh's error. */
+async function ghPrList($: Dollar, cwd: string, extra: string[]): Promise<{ prs: GhPr[] } | { error: string }> {
+  const got = await ghJson<GhPr[]>($, cwd, ['gh', 'pr', 'list', '--state', 'all', ...extra, '--json', PR_FIELDS])
+  return 'error' in got ? got : { prs: got.value }
+}
+
+/** Reads one PR's checks; split from the page query, which times out GitHub when it carries them. */
+async function ghChecks($: Dollar, cwd: string, number: number) {
+  return ghJson<{ statusCheckRollup?: RollupEntry[] | null }>($, cwd, ['gh', 'pr', 'view', String(number), '--json', CHECK_FIELDS])
 }
 
 /** Finds each branch's PR for one repo: one batched page, then a per-branch call for branches not on it. */
@@ -144,7 +154,11 @@ async function readPrs($: Dollar, rows: readonly Bare[]): Promise<RepoPrs> {
         else found = one.prs
       }
       const picked = pickPr(found)
-      if (picked) prs.set(branch, toPr(picked, cfg.reviewCheck))
+      if (!picked) return
+      // One small call per worktree PR; a failure here marks the row unknown like any other gh failure.
+      const checks = await ghChecks($, path, picked.number)
+      if ('error' in checks) errors.set(branch, checks.error)
+      prs.set(branch, toPr({ ...picked, statusCheckRollup: 'error' in checks ? [] : checks.value.statusCheckRollup }, cfg.reviewCheck))
     }),
   )
   return { prs, errors }

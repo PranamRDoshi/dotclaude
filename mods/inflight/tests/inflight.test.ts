@@ -48,6 +48,13 @@ const out = (exitCode: number, stdout = '', stderr = ''): Ran => ({ exitCode, st
 /** gh answering with a PR list. */
 const ghOk = (prs: GhPr[]) => out(0, JSON.stringify(prs))
 
+/** Default gh: the shared page for a list, no PR for --head, and that page PR's checks for `pr view <n>`. */
+const ghDefault = (argv: readonly string[]): Ran => {
+  if (argv[2] !== 'view') return ghOk(argv.includes('--head') ? [] : page)
+  const checks = page.find(p => p.number === Number(argv[3]))?.statusCheckRollup ?? []
+  return out(0, JSON.stringify({ statusCheckRollup: checks }))
+}
+
 /** Answers `git -C <dir>` calls: the worktree list in CWD, else the fixture worktree the folder's name picks. */
 function fakeGit(argv: readonly string[]): Ran {
   const dir = String(argv[2])
@@ -66,7 +73,7 @@ function fakeGit(argv: readonly string[]): Ran {
 }
 
 /** The engine beneath the plugin: fs, env, clock, store, processes and the timeline pane's own tree, recording every argv. */
-function world(on: On, other: (argv: readonly string[]) => Ran = argv => ghOk(argv.includes('--head') ? [] : page)) {
+function world(on: On, other: (argv: readonly string[]) => Ran = ghDefault) {
   const w = {
     calls: [] as { argv: readonly string[]; cwd?: string }[],
     listed: [] as string[],
@@ -218,6 +225,18 @@ test('worktreesRoot: the child folders of the root, ~ expanded, are the rows; ve
   // One batched call per repo with worktrees; the page is short, so no per-branch fallback.
   expect(batches(w)).toHaveLength(2)
   expect(w.calls.filter(c => c.argv.includes('--head'))).toEqual([])
+  // Checks stay off the page (GitHub 504s on a busy repo with them) and come once per matched PR.
+  for (const call of batches(w)) expect(call.argv.join(' ')).not.toContain('statusCheckRollup')
+  const views = w.calls.filter(c => c.argv[0] === 'gh' && c.argv[2] === 'view').map(c => c.argv[3])
+  expect(views.sort()).toEqual(['683', '710'])
+})
+
+test('a failed checks call marks that row unknown and keeps its PR', { options: OPTS }, async ($, on) => {
+  const w = world(on, argv => (argv[2] === 'view' && argv[3] === '710' ? out(1, '', 'HTTP 504: 504 Gateway Timeout\n') : ghDefault(argv)))
+  const scan = await runInflight($, w)
+  const row = scan.rows.find(r => r.name === 'api--open-stacked')
+  expect(row).toMatchObject({ verdict: 'unknown', reason: 'HTTP 504: 504 Gateway Timeout', pr: { number: 710, ci: 'none' } })
+  expect(scan.rows.find(r => r.name === 'api--merged-gone')?.verdict).toBe('remove')
 })
 
 test('skipRepos: a name prefix stops before any git call, a git-derived name and a stray folder after one', { options: OPTS }, async ($, on) => {
@@ -312,7 +331,7 @@ test('Remove shows only on a remove verdict; a press runs the default command in
   const name = 'api--merged-gone'
   const path = `${HOME}/wt/${name}`
   let answer = out(0)
-  const w = world(on, argv => (argv[1] === 'worktree' ? answer : ghOk(argv.includes('--head') ? [] : page)))
+  const w = world(on, argv => (argv[1] === 'worktree' ? answer : ghDefault(argv)))
   await runInflight($, w)
   const ui = await mount($)
   const keys = (await ui.findAll({ type: 'Button' })).map(node => node.props.key)
