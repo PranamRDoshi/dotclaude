@@ -1,7 +1,10 @@
 /** Worktree scan: pure helpers for the options, local git facts, GitHub PR facts and the removal verdict of each worktree row. */
 import type { CiState, Pr, ReviewState, Row } from './types'
 
-export const PR_FIELDS = 'number,title,state,isDraft,baseRefName,headRefName,headRefOid,url,updatedAt,statusCheckRollup'
+// No statusCheckRollup here: 100 PRs' worth of checks makes GitHub's GraphQL 504 on a busy repo (~11 s).
+// Checks come per matched PR from CHECK_FIELDS instead.
+export const PR_FIELDS = 'number,title,state,isDraft,baseRefName,headRefName,headRefOid,url,updatedAt'
+export const CHECK_FIELDS = 'statusCheckRollup'
 export const PR_PAGE = 100
 export const GH_TIMEOUT_MS = 20_000
 // Conclusions that fail a check; SKIPPED and NEUTRAL CI runs count as passing.
