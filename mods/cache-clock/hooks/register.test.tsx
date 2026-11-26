@@ -1,7 +1,7 @@
 /**
  * Tests for cache-clock: TTL detection from usage, the warm/cooling/cold
  * boundaries for both TTLs, the line's parts and colour grades (usage windows and
- * effort included), the band's visibility,
+ * effort included), the second row's turn and tool counts, the band's visibility,
  * and the Keep warm fork.
  * Every hook registered here stands for the engine beneath the plugin.
  */
@@ -9,7 +9,10 @@ import { expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { ModelForkResult, On } from 'claude-code'
 
-import { composeParts, contextBar, ctxColor, leftText, parseBranches, phaseAt, shortModel, statusText, ttlFromUsage, usdColor } from './register'
+import {
+  composeParts, contextBar, countsText, ctxColor, leftText, parseBranches, phaseAt, shortModel, statusText, toolCategory,
+  ttlFromUsage, usdColor,
+} from './register'
 import type { Run } from './register'
 
 const MIN = 60 * 1000
@@ -348,4 +351,44 @@ test('model ids read short; anything else shows as given', () => {
   expect(shortModel('claude-opus-5-5')).toBe('Opus 5.5')
   expect(shortModel('claude-fable-5-1[1m]')).toBe('Fable 5.1[1m]')
   expect(shortModel('gpt-x')).toBe('gpt-x')
+})
+
+test('tools fall into macro categories; codegraph counts as a read', () => {
+  const names = ['Read', 'Grep', 'Glob', 'mcp__codegraph__codegraph_explore', 'Edit', 'Write', 'NotebookEdit', 'Bash',
+    'Agent', 'Workflow', 'mcp__signoz__signoz_search_logs', 'WebSearch', 'WebFetch', 'Skill']
+  expect(names.map(toolCategory)).toEqual(['read', 'read', 'read', 'read', 'edit', 'edit', 'edit', 'bash',
+    'agent', 'agent', 'mcp', 'web', 'web', 'other'])
+  expect(countsText({ turns: 0, tools: {}, subTools: 0 })).toBe(undefined)
+  expect(countsText({ turns: 3, tools: { other: 1, bash: 2, read: 4 }, subTools: 0 })).toBe('turns 3  tools 7 · read 4 bash 2 other 1')
+  expect(countsText({ turns: 1, tools: {}, subTools: 5 })).toBe('turns 1  tools 0  sub 5')
+})
+
+test('the second row counts main-thread turns and calls, subagent calls in one total, and /clear resets it', async ($, on) => {
+  const w = world(on)
+  on('turn.complete', (_, e) => ({ text: e.answer }))
+  on('tool.call', () => ({ result: {} }))
+  on('session.end', (_, e) => ({ sessionId: e.sessionId }))
+  /** The second row's text, or undefined when none is drawn. */
+  const row = async () => {
+    const ui = await $.ui.mount({ ...HINT, surface: 'terminal' })
+    const text = (await ui.find({ key: 'cache-clock-counts' }))?.text
+    await ui.unmount()
+    return text || undefined
+  }
+  const done = () => $.turn.complete({ turnId: 't1', answer: 'ok', durationMs: 5, isAborted: false, reason: 'answer' })
+  await start($)
+  expect(await row()).toBe(undefined)
+
+  await $.tool.call({ tool: 'Read', file_path: '/a' })
+  await $.tool.call({ tool: 'Bash', command: 'ls' })
+  await $.tool.call({ tool: 'mcp__signoz__signoz_search_logs' })
+  await $.tool.call({ tool: 'Grep', pattern: 'x', agentId: 'a1' })
+  await $.tool.call({ tool: 'Bash', command: 'ls', agentId: 'a1' })
+  // A subagent's turn end is not a main-thread turn.
+  await $.turn.complete({ turnId: 't2', answer: 'ok', durationMs: 5, isAborted: false, reason: 'answer', agentId: 'a1' })
+  await done()
+  expect(await row()).toBe('turns 1  tools 3 · read 1 bash 1 mcp 1  sub 2')
+
+  await $.session.end({ reason: 'clear', sessionId: 's1', resume: { id: 's1' } })
+  expect(await row()).toBe(undefined)
 })
