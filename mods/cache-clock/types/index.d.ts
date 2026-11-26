@@ -24,6 +24,8 @@ declare module 'claude-code' {
       ttlMs: number | null
       /** True while a Keep warm fork is in flight. */
       isWarming: boolean
+      /** Session counts for the second row: main-thread turns and tool calls by category, subagent calls in total. */
+      counts: { turns: number; tools: Partial<Record<string, number>>; subTools: number }
     }
   }
 }

@@ -2,7 +2,8 @@
  * cache-clock: the session's status line. It shows context fill, cost, how long
  * the main thread's prompt cache stays warm, 5-hour and weekly usage with the time
  * left until each resets, then model
- * (effort), cwd and branch, each graded by colour, and offers one Keep warm button in
+ * (effort), cwd and branch, each graded by colour. A second row counts main-thread
+ * turns and tool calls by category, plus subagent calls in total. It offers one Keep warm button in
  * the band above the prompt while the cache is cooling. Why: an idle session
  * that lets its cache lapse pays a full prefix write on the next message.
  */
@@ -29,6 +30,8 @@ let currentBranch: string | undefined
 let currentEffort: string | number | undefined
 // The parts the PromptHint hook draws; refresh() recomputes them.
 let currentParts: Run[][] = []
+// The second row's text; refresh() recomputes it.
+let currentCounts: string | undefined
 // Branches drawn red; register() replaces it from the protectedBranches option.
 let protectedBranches = parseBranches(DEFAULT_PROTECTED)
 
@@ -40,6 +43,35 @@ export function parseBranches(value: string): Set<string> {
 const lastAt = atom({ plugin: 'cache-clock', key: 'lastAt' } as const, null)
 const ttlMs = atom({ plugin: 'cache-clock', key: 'ttlMs' } as const, null)
 const isWarming = atom({ plugin: 'cache-clock', key: 'isWarming' } as const, false)
+// In $.state, not module scope, so a plugin reload keeps the session's counts.
+const counts = atom({ plugin: 'cache-clock', key: 'counts' } as const, { turns: 0, tools: {}, subTools: 0 })
+
+export type Counts = { turns: number; tools: Partial<Record<string, number>>; subTools: number }
+
+// Macro categories, shown in this order; a zero category drops out.
+const TOOL_CATEGORIES = ['read', 'edit', 'bash', 'agent', 'mcp', 'web', 'other'] as const
+const CATEGORY_OF: Record<string, string> = {
+  Read: 'read', Grep: 'read', Glob: 'read',
+  Edit: 'edit', Write: 'edit', NotebookEdit: 'edit',
+  Bash: 'bash',
+  Agent: 'agent', Task: 'agent', Workflow: 'agent',
+  WebSearch: 'web', WebFetch: 'web',
+}
+
+/** The macro category of a tool name. CodeGraph is an MCP server but counts as a read. */
+export function toolCategory(tool: string): string {
+  if (/^mcp__.*codegraph/.test(tool)) return 'read'
+  return CATEGORY_OF[tool] ?? (tool.startsWith('mcp__') ? 'mcp' : 'other')
+}
+
+/** The second row, as in `turns 14  tools 82 · read 40 bash 22  sub 37`; undefined before anything ran. */
+export function countsText(c: Counts): string | undefined {
+  const total = Object.values(c.tools).reduce((sum: number, n) => sum + (n ?? 0), 0)
+  if (c.turns === 0 && total === 0 && c.subTools === 0) return undefined
+  const byKind = TOOL_CATEGORIES.filter(k => c.tools[k]).map(k => `${k} ${c.tools[k]}`).join(' ')
+  // Subagents get one total across all of them, no categories.
+  return `turns ${c.turns}  tools ${total}${byKind ? ` · ${byKind}` : ''}${c.subTools ? `  sub ${c.subTools}` : ''}`
+}
 
 type Usage = ModelUsage & CacheClockUsageSplit
 export type Phase = { kind: 'warm' | 'cooling'; leftMs: number } | { kind: 'cold' }
@@ -211,8 +243,9 @@ async function currentPhase($: EngineInterface): Promise<Phase | null> {
 
 /** Recomputes the line and redraws the hint row and band, since phases move with time alone. */
 async function refresh($: EngineInterface): Promise<void> {
-  const [figures, phase] = await Promise.all([sessionFigures($), currentPhase($)])
+  const [figures, phase, tally] = await Promise.all([sessionFigures($), currentPhase($), read($, counts)])
   currentParts = composeParts(figures, phase)
+  currentCounts = countsText(tally)
   $.ui.invalidate('ui.render')
 }
 
@@ -311,11 +344,24 @@ export const register: Register = (on, options) => {
     const result = await next(e)
     // A turn may switch branch or directory; re-read once the main thread's turn ends.
     if (e.agentId === undefined) {
+      await update($, counts, c => ({ ...c, turns: c.turns + 1 }))
       currentBranch = await readBranch($)
       await refresh($)
     }
     return result
   })
+
+  // Counts only; the row redraws at turn end (or on the 30 s tick), never per call.
+  on('tool.call', async ($, e, next) => {
+    const ran = await next(e)
+    // A subagent's calls carry an agentId; they add to one total, not to the categories.
+    const isSub = e.agentId !== undefined
+    const kind = toolCategory(String(e.tool))
+    await update($, counts, c =>
+      isSub ? { ...c, subTools: c.subTools + 1 } : { ...c, tools: { ...c.tools, [kind]: (c.tools[kind] ?? 0) + 1 } },
+    )
+    return ran
+  }).catch(($, e, next) => next(e)) // never in the way of a tool: replay its result or run it as is
 
   on('turn.step', async function* ($, e, next) {
     // Absent for a model without effort, which drops the brackets.
@@ -346,7 +392,11 @@ export const register: Register = (on, options) => {
 
   on('session.end', async ($, e, next) => {
     // /clear is session.end with reason clear; no session.start follows it.
-    if (e.reason === 'clear') await clearClock($)
+    // /clear starts a new conversation, so its counts start over; compaction keeps them.
+    if (e.reason === 'clear') {
+      await update($, counts, () => ({ turns: 0, tools: {}, subTools: 0 }))
+      await clearClock($)
+    }
     return next(e)
   })
 
@@ -355,20 +405,28 @@ export const register: Register = (on, options) => {
   // carry the colour grades; the engine's line goes first, whole, so its pills stay live.
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
     const engineLine = await next(e)
-    if (currentParts.length === 0) return engineLine
+    if (currentParts.length === 0 && currentCounts === undefined) return engineLine
     const { Box, Text } = $.ui.resolve(e)
     return (
-      <Box flexDirection="row" gap={2}>
-        <Box flexShrink={0}>{engineLine}</Box>
-        {/* Cut at the row's end, as the engine cut `tail`. */}
-        <Box key="cache-clock-line" flexShrink={1}>
-          <Text wrap="truncate-end">
-            {currentParts.map((runs, i) => [
-              i > 0 && '  ',
-              runs.map(run => <Text color={run.color} dimColor={run.isDim}>{run.text}</Text>),
-            ])}
-          </Text>
+      <Box flexDirection="column">
+        <Box flexDirection="row" gap={2}>
+          <Box flexShrink={0}>{engineLine}</Box>
+          {/* Cut at the row's end, as the engine cut `tail`. */}
+          <Box key="cache-clock-line" flexShrink={1}>
+            <Text wrap="truncate-end">
+              {currentParts.map((runs, i) => [
+                i > 0 && '  ',
+                runs.map(run => <Text color={run.color} dimColor={run.isDim}>{run.text}</Text>),
+              ])}
+            </Text>
+          </Box>
         </Box>
+        {/* Counts on their own row under the line, dim. */}
+        {currentCounts !== undefined && (
+          <Box key="cache-clock-counts">
+            <Text dimColor wrap="truncate-end">{currentCounts}</Text>
+          </Box>
+        )}
       </Box>
     )
   })

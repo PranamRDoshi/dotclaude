@@ -28,6 +28,21 @@ with one small request.
 A part with no data drops out of the line. The cache counts as cooling in the last 10 minutes of a
 1-hour TTL and the last 60 seconds of a 5-minute one.
 
+## Counts row
+
+A second, dim row under the line counts the session's work:
+
+```
+turns 14  tools 82 · read 40 bash 22 edit 9 mcp 6 agent 3 other 2  sub 37
+```
+
+`turns` and `tools` cover the main thread only. Tool calls fall into `read` (Read, Grep, Glob and
+any CodeGraph MCP tool), `edit` (Edit, Write, NotebookEdit), `bash`, `agent` (Agent, Workflow),
+`mcp` (any other `mcp__` tool), `web` (WebSearch, WebFetch) and `other`; a category with no calls
+drops out. `sub` is the total of every subagent's tool calls. Calls are counted as they run, and
+the row redraws at the end of each turn and on the 30-second tick. `/clear` resets it, compaction
+does not. Calls made before the plugin loaded are not counted.
+
 ## Keep warm
 
 While the cache is cooling, a Keep warm button appears in the band above the prompt. One press
